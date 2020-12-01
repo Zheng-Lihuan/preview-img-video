@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>上传文件demo</title>
+</head>
+
+<body>
+  <div id="app">
+    <div>
+      <progress max="100" :value='progress'></progress> <span>{{progress}}%</span>
+    </div>
+    <div>
+      <!-- <input type="file" name='file' @change="uploadImg"> -->
+      <input type="file" name='file' @change="uploadImg" accept="image/jpeg,image/png,video/mp4">
+    </div>
+    <div v-if="img_src">
+      <img :src="img_src" alt="" class="img">
+    </div>
+    <div v-if="video_src">
+      <video :src="video_src" controls></video>
+    </div>
+      
+    <div>
+      <h1>文件信息</h1>
+      <h2>文件大小：{{img_info.img_size}}</h2>
+      <h2>最后修改时间：{{img_info.edit_time}}</h2>
+      <h2>文件格式:{{img_info.type}}</h2>
+      <h2>文件名称:{{img_info.name}}</h2>
+    </div>
+  </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script>
+      var vm=new Vue({
+        el:'#app',
+        data:{
+          img_info:{},
+          img_src:'',
+          video_src:'',
+          progress:0,
+        },
+        methods:{
+          uploadImg(e){
+            // console.log('e',e);
+            if(e.target.files[0]){
+              this.progress=0;
+              console.log('上传文件',e.target.files[0]);
+              let info=e.target.files[0];
+              this.getFileData(info);//获取文件的二进制数据
+              info.img_size=this.getFormatFileSize(info.size);
+              info.edit_time=this.getFormatTime(info.lastModified);
+              this.img_info=info;
+            }
+            
+            // console.log('img_info',this.img_info);
+          },
+
+          //格式换文件尺寸展示格式
+          getFormatFileSize(size){
+            let file_size='';
+            if(size>=1024*1024){
+              file_size=(size/1024/1024).toFixed(2)+'M'
+            }else {
+              file_size=(size/1024).toFixed(2)+'kb'
+            }
+            return file_size;
+          },
+
+          //格式化时间
+          getFormatTime(date){
+            let time=new Date(date);
+            let year=this.formatNumber(time.getFullYear());
+            let month=this.formatNumber(time.getMonth()+1);
+            let day=this.formatNumber(time.getDate());
+            let hours=this.formatNumber(time.getHours());
+            let minutes=this.formatNumber(time.getMinutes());
+            let seconds=this.formatNumber(time.getSeconds());
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+          },
+
+          //格式化小于10的数值
+          formatNumber(num){
+           return (num-0)>=10?num:'0'+num
+          },
+
+          //获取文件的二进制数据
+          getFileData(file){
+            if(!window.FileReader){
+              return 
+            }
+
+            let fr=new FileReader()
+            fr.onload=(e)=>{
+              if(e.target.result.includes('data:video')){//视频
+                this.video_src=e.target.result;
+              }else if(e.target.result.includes('data:image')){//图片
+                this.img_src=e.target.result;
+              }
+            }
+
+            fr.readAsDataURL(file)
+            fr.onprogress=(e)=>{
+              this.progress=Math.ceil(e.loaded/e.total*100);
+              console.log('上传进度:',Math.ceil(e.loaded/e.total*100)+'%');
+            }
+          }
+        }
+      })
+    </script>
+</body>
+
+</html>
